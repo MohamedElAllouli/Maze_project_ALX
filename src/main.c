@@ -1,128 +1,97 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include "defs.h"
-#include "graphics.h"
-#include "map.h"
-#include "player.h"
-#include "ray.h"
-#include "wall.h"
-#include "sprite.h"
-#include "textures.h"
+#include "../headers/header.h"
 
-bool	isGameRunning = false;
-int		ticksLastFrame;
+bool GameRunning = false;
+int TicksLastFrame;
+player_t player;
 
-void	setup(void)
+/**
+ * setup_game - initialize player variables and load wall textures
+ *
+*/
+
+void setup_game(void)
 {
-	// Asks uPNG library to decode all PNG files and loads the wallTextures array
-	loadTextures();
+
+	player.x = SCREEN_WIDTH / 2;
+	player.y = SCREEN_HEIGHT / 2;
+	player.width = 1;
+	player.height = 30;
+	player.walkDirection = 0;
+	player.walkSpeed = 100;
+	player.turnDirection = 0;
+	player.turnSpeed = 45 * (PI / 180);
+	player.rotationAngle = PI / 2;
+	WallTexturesready();
 }
 
-void	processInput(void)
-{
-	SDL_Event	event;
 
-	SDL_PollEvent(&event);
-	switch (event.type)
+/**
+ * update_game - update_game delta time, the ticks last frame
+ *          the player movement and the ray casting
+ *
+*/
+void update_game(void)
+{
+	float DeltaTime;
+	int timeToWait = FRAME_TIME_LENGTH - (SDL_GetTicks() - TicksLastFrame);
+
+	if (timeToWait > 0 && timeToWait <= FRAME_TIME_LENGTH)
 	{
-		case SDL_QUIT:
-		{
-			isGameRunning = false;
-			break;
-		}
-		case SDL_KEYDOWN:
-		{
-			if (event.key.keysym.sym == SDLK_ESCAPE)
-				isGameRunning = false;
-			if (event.key.keysym.sym == SDLK_UP)
-				player.walkDirection = +1;
-			if (event.key.keysym.sym == SDLK_DOWN)
-				player.walkDirection = -1;
-			if (event.key.keysym.sym == SDLK_RIGHT)
-				player.turnDirection = +1;
-			if (event.key.keysym.sym == SDLK_LEFT)
-				player.turnDirection = -1;
-			break;
-		}
-		case SDL_KEYUP:
-		{
-			if (event.key.keysym.sym == SDLK_ESCAPE)
-				isGameRunning = false;
-			if (event.key.keysym.sym == SDLK_UP)
-				player.walkDirection = 0;
-			if (event.key.keysym.sym == SDLK_DOWN)
-				player.walkDirection = 0;
-			if (event.key.keysym.sym == SDLK_RIGHT)
-				player.turnDirection = 0;
-			if (event.key.keysym.sym == SDLK_LEFT)
-				player.turnDirection = 0;
-			break;
-		}
-	}
-}
-
-void	update(void)
-{
-	int		timeToWait;
-	float	deltaTime;
-
-	// Compute how long we have until the reach the target frame time in milliseconds
-	timeToWait = FRAME_TIME_LENGTH - (SDL_GetTicks() - ticksLastFrame);
-
-	// Only delay execution if we are running too fast
-	if (timeToWait > 0 && timeToWait <= FRAME_TIME_LENGTH) {
 		SDL_Delay(timeToWait);
 	}
+	DeltaTime = (SDL_GetTicks() - TicksLastFrame) / 1000.0f;
 
-	// Compute the delta time to be used as an update factor when changing game objects
-	deltaTime = (SDL_GetTicks() - ticksLastFrame) / 1000.0f;
+	TicksLastFrame = SDL_GetTicks();
 
-	// Store the milliseconds of the current frame to be used in the future
-	ticksLastFrame = SDL_GetTicks();
-
-	movePlayer(deltaTime);
+	movePlayer(DeltaTime);
 	castAllRays();
 }
 
-void	render(void)
+/**
+ * render - calls all functions needed for on-screen rendering
+ *
+*/
+
+void render_game(void)
 {
-	// clear the color buffer
 	clearColorBuffer(0xFF000000);
 
-	// Render the wall and sprites
-	renderWallProjection();
-	renderSpriteProjection();
+	renderWall();
 
-	// Render the minimap objects
-	// display the minimap
-	renderMapGrid();
-	renderMapRays();
-	renderMapSprites();
-	renderMapPlayer();
+	renderMap();
+	renderRays();
+	renderPlayer();
 
 	renderColorBuffer();
 }
 
-void	releaseResources(void)
+/**
+ * Destroy - free wall textures and destroy window
+ *
+*/
+void destroy_game(void)
 {
-	freeTextures();
+	freeWallTextures();
 	destroyWindow();
 }
 
-int	main(void)
+/**
+ * main - main function
+ * Return: 0
+*/
+
+int main(void)
 {
-	isGameRunning = initializeWindow();
+	GameRunning = initializeWindow();
 
-	setup();
+	setup_game();
 
-	while (isGameRunning) {
-		processInput();
-		update();
-		render();
+	while (GameRunning)
+	{
+		handleInput();
+		update_game();
+		render_game();
 	}
-
-	releaseResources();
-
-	return (EXIT_SUCCESS);
+	destroy_game();
+	return (0);
 }

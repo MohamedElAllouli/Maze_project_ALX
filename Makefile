@@ -1,8 +1,8 @@
 build:
-	gcc -std=c99 ./src/*.c -lSDL2 -lm -o raycast;
+	gcc -Wall -Werror -Wextra -pedantic ./src/*.c -lm -o maze `sdl2-config --cflags` `sdl2-config --libs`;
 
 run:
-	make && clear && ./raycast && make clean;
+	./maze;
 
 clean:
-	rm raycast;
+	rm maze;

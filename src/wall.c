@@ -1,103 +1,139 @@
-#include "wall.h"
+#include "../headers/header.h"
 
-// Change the color intensity based on factor value between 0 and 1
-void	changeColorIntensity(color_t *color, float factor)
+/**
+ * changeColorIntensity - change color intensity
+ * based on a factor value between 0 and 1
+ * @factor: intensity factor
+ * @color: color for intensity
+*/
+
+void changeColorIntensity(color_t *color, float factor)
 {
-	color_t	a;
-	color_t	r;
-	color_t	g;
-	color_t	b;
-
-	a = (*color & 0xFF000000);
-	r = (*color & 0x00FF0000) * factor;
-	g = (*color & 0x0000FF00) * factor;
-	b = (*color & 0x000000FF) * factor;
+	color_t a = (*color & 0xFF000000);
+	color_t r = (*color & 0x00FF0000) * factor;
+	color_t g = (*color & 0x0000FF00) * factor;
+	color_t b = (*color & 0x000000FF) * factor;
 
 	*color = a | (r & 0x00FF0000) | (g & 0x0000FF00) | (b & 0x000000FF);
 }
 
-void	renderWallProjection(void)
+/**
+ * renderFloor - render floor projection
+ *
+ * @WallBottomPixel: wall bottom pixel
+ * @texelColor: texture color for current pixel
+ * @x: current element in the rays array
+*/
+
+void renderFloor(int wallBottomPixel, color_t *texelColor, int x)
 {
-	float		distanceProjPlane;
-	float		wallHeight;
-	int			wallTopY;
-	int			wallBottomY;
-	float		perpDistance;
-	color_t		texelColor;
-	color_t		*wallTextureBuffer;
-	int			textureOffsetX;
-	int			textureOffsetY;
-	int			distanceFromTop;
-	int			texNum;
-	int			textureWidth;
-	int			textureHeight;
+	int y, texture_height, texture_width, textureOffsetY, textureOffsetX;
+	float distance, ratio;
 
-	for (int x = 0; x < NUM_RAYS; x++)
+	texture_width = wallTextures[3].width;
+	texture_height = wallTextures[3].height;
+
+	for (y = wallBottomPixel - 1; y < SCREEN_HEIGHT; y++)
 	{
-		// Calculate the projection plane distance
-		distanceProjPlane = (WINDOW_WIDTH / 2) / tan(FOV_ANGLE / 2);
+		ratio = player.height / (y - SCREEN_HEIGHT / 2);
+		distance = (ratio * PROJ_PLANE)
+					/ cos(rays[x].rayAngle - player.rotationAngle);
 
-		// Calculate the perpendicular distance to avoid the fish-eye distortion
-		perpDistance = rays[x].distance * cos(rays[x].rayAngle - player.rotationAngle);
+		textureOffsetY = (int)fabs((distance * sin(rays[x].rayAngle)) + player.y);
+		textureOffsetX = (int)fabs((distance * cos(rays[x].rayAngle)) + player.x);
 
-		// Calculate the projected wall height
-		wallHeight = (TILE_SIZE / perpDistance) * distanceProjPlane;
+		textureOffsetX = (int)(abs(textureOffsetX * texture_width / 30)
+								% texture_width);
+		textureOffsetY = (int)(abs(textureOffsetY * texture_height / 30)
+								% texture_height);
 
-		// Find the wall top Y value
-		wallTopY = (WINDOW_HEIGHT / 2) - (wallHeight / 2);
-		wallTopY = wallTopY < 0 ? 0 : wallTopY;
+		*texelColor = wallTextures[4].
+					  texture_buffer[(texture_width * textureOffsetY) + textureOffsetX];
+		drawPixel(x, y, *texelColor);
+	}
+}
 
-		// Find the wall bottom Y value
-		wallBottomY = (WINDOW_HEIGHT / 2) + (wallHeight / 2);
-		wallBottomY = wallBottomY > WINDOW_HEIGHT ? WINDOW_HEIGHT : wallBottomY;
+/**
+ * renderCeil - render Ceil projection
+ * @WallTopPixel: wall top pixel
+ * @texelColor: texture color for current pixel
+ * @x: current element in the rays array
+*/
 
-		// Draw the ceiling
-		for (int y = 0; y < wallTopY; y++)
-			// colorBuffer[(WINDOW_WIDTH * y) + x] = 0xFF444444;
-			drawPixel(x, y, 0xFF444444);
+void renderCeil(int wallTopPixel, color_t *texelColor, int x)
+{
+	int y, texture_width, texture_height, textureOffsetY, textureOffsetX;
 
-		// Draw the textured wall
+	texture_width = wallTextures[3].width;
+	texture_height = wallTextures[3].height;
+
+	for (y = 0; y < wallTopPixel; y++)
+	{
+		float distance, ratio;
+
+		ratio = player.height / (y - SCREEN_HEIGHT / 2);
+		distance = (ratio * PROJ_PLANE)
+					/ cos(rays[x].rayAngle - player.rotationAngle);
+
+		textureOffsetY = (int)fabs((-distance * sin(rays[x].rayAngle)) + player.y);
+		textureOffsetX = (int)fabs((-distance * cos(rays[x].rayAngle)) + player.x);
+
+		textureOffsetX = (int)(abs(textureOffsetX * texture_width / 40)
+								% texture_width);
+		textureOffsetY = (int)(abs(textureOffsetY * texture_height / 40)
+								% texture_height);
+
+		*texelColor = wallTextures[6].
+					  texture_buffer[(texture_width * textureOffsetY) + textureOffsetX];
+		drawPixel(x, y, *texelColor);
+
+	}
+}
+
+/**
+ * renderWall - render wall projection
+ *
+*/
+void renderWall(void)
+{
+	int x, y, texNum, texture_width, texture_height,
+		textureOffsetX, wallBottomPixel, wallStripHeight,
+		wallTopPixel, distanceFromTop, textureOffsetY;
+	float perpDistance, projectedWallHeight;
+	color_t texelColor;
+
+	for (x = 0; x < NUM_RAYS; x++)
+	{
+		perpDistance = rays[x].distance * cos(rays[x].rayAngle
+							- player.rotationAngle);
+		projectedWallHeight = (TILE_SIZE / perpDistance) * PROJ_PLANE;
+		wallStripHeight = (int)projectedWallHeight;
+		wallTopPixel = (SCREEN_HEIGHT / 2) - (wallStripHeight / 2);
+		wallTopPixel = wallTopPixel < 0 ? 0 : wallTopPixel;
+		wallBottomPixel = (SCREEN_HEIGHT / 2) + (wallStripHeight / 2);
+		wallBottomPixel = wallBottomPixel > SCREEN_HEIGHT
+							? SCREEN_HEIGHT : wallBottomPixel;
+		texNum = rays[x].wallHitContent - 1;
+		texture_width = wallTextures[texNum].width;
+		texture_height = wallTextures[texNum].height;
+		renderFloor(wallBottomPixel, &texelColor, x);
+		renderCeil(wallTopPixel, &texelColor, x);
+
 		if (rays[x].wasHitVertical)
-		{
-			// perform offset for the vertical hit
 			textureOffsetX = (int)rays[x].wallHitY % TILE_SIZE;
-		}
 		else
-		{
-			// perform offset for the horizontal hit
 			textureOffsetX = (int)rays[x].wallHitX % TILE_SIZE;
-		}
 
-		// Get the correct texture id number from the map content
-		texNum = rays[x].texture - 1;
-
-		// Query the texture width and height from the upng
-		textureWidth = upng_get_width(textures[texNum]);
-		textureHeight = upng_get_height(textures[texNum]);
-
-		// Render the wall from wallTopY to wallBottomY
-		for (int y = wallTopY; y < wallBottomY; y++)
+		for (y = wallTopPixel; y < wallBottomPixel; y++)
 		{
-			// calculate textureOffsetY
-			distanceFromTop = y + (wallHeight / 2) - (WINDOW_HEIGHT / 2);
-			textureOffsetY = distanceFromTop * ((float)textureHeight / wallHeight);
-
-			// Set the color of the wall based on the color from the texture
-			wallTextureBuffer = (color_t *)upng_get_buffer(textures[texNum]);
-			texelColor = wallTextureBuffer[(textureWidth * textureOffsetY) + textureOffsetX];
-
-			// Make the pixel color darker if the ray hit was vertical
+			distanceFromTop = y + (wallStripHeight / 2) - (SCREEN_HEIGHT / 2);
+			textureOffsetY = distanceFromTop *
+								((float)texture_height / wallStripHeight);
+			texelColor = wallTextures[texNum].
+						 texture_buffer[(texture_width * textureOffsetY) + textureOffsetX];
 			if (rays[x].wasHitVertical)
-			{
-				changeColorIntensity(&texelColor, 0.7);
-			}
-
-			// colorBuffer[(WINDOW_WIDTH * y) + x] = texelColor;
+				changeColorIntensity(&texelColor, 0.5);
 			drawPixel(x, y, texelColor);
 		}
-		// Draw the floor
-		for (int y = wallBottomY; y < WINDOW_HEIGHT; y++)
-			// colorBuffer[(WINDOW_WIDTH * y) + x] = 0xFF777777;
-			drawPixel(x, y, 0xFF777777);
 	}
 }

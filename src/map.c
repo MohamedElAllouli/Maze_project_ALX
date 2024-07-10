@@ -1,54 +1,82 @@
-#include "map.h"
+#include "../headers/header.h"
 
-static const int	map[MAP_NUM_ROWS][MAP_NUM_COLS] = {
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,1, 1, 1, 1, 1, 1, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 2, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 5},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 5},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 5},
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5}
+static const int map[MAP_NUM_ROWS][MAP_NUM_COLS] = {
+	{6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6},
+	{6, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 6},
+	{6, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 6, 0, 0, 0, 6, 0, 0, 0, 6},
+	{6, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 6, 0, 1, 1, 0, 0, 0, 0, 6},
+	{6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 1, 0, 6},
+	{6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 6},
+	{6, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 6},
+	{6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 6},
+	{6, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 6},
+	{6, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 6},
+	{6, 0, 0, 6, 6, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 6},
+	{6, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
+	{6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6}
 };
 
-bool	mapHasWallAt(float x, float y)
-{
-	int	mapGridIndexX;
-	int	mapGridIndexY;
+/**
+ * DetectCollision - Checks if there could be a collision
+ * with the wall in the next player advance
+ * @x: next x coordinate
+ * @y: next y coordinate
+ * Return: true if collision is detected, false otherwise
+*/
 
-	if (x < 0 || x >= MAP_NUM_COLS * TILE_SIZE || y < 0 || y >= MAP_NUM_ROWS * TILE_SIZE)
+bool DetectCollision(float x, float y)
+{
+	int mapGridX, mapGridY;
+
+	if (x < 0 || x >= MAP_NUM_COLS * TILE_SIZE ||
+			y < 0 || y >= MAP_NUM_ROWS * TILE_SIZE)
 		return (true);
 
-	mapGridIndexX = (floor)(x / TILE_SIZE);
-	mapGridIndexY = (floor)(y / TILE_SIZE);
-	return (map[mapGridIndexY][mapGridIndexX] != 0);
+	mapGridX = floor(x / TILE_SIZE);
+	mapGridY = floor(y / TILE_SIZE);
+	return (map[mapGridY][mapGridX] != 0);
 }
 
-bool	isInsideMap(float x, float y)
+/**
+ * isInsideMap - check if we continue within the map
+ * @x: next x coordinate
+ * @y: next y coordinate
+ * @Return: true if it is within the map, false otherwise
+*/
+
+bool isInsideMap(float x, float y)
 {
-	return (x >= 0 && x <= MAP_NUM_COLS * TILE_SIZE
-		&& y >= 0 && y <= MAP_NUM_ROWS * TILE_SIZE);
+	return (x >= 0 && x <= MAP_NUM_COLS * TILE_SIZE &&
+				y >= 0 && y <= MAP_NUM_ROWS * TILE_SIZE);
 }
 
-int		getMapAt(int i, int j)
+/**
+ * getMapValue - check if we continue within the map
+ * @row: map row to check
+ * @col: map column to check
+ * @Return: The position value in the map
+*/
+
+int getMapValue(int row, int col)
 {
-	return (map[i][j]);
+
+	return (map[row][col]);
+
 }
 
-void	renderMapGrid(void)
-{
-	int			tileX;
-	int			tileY;
-	uint32_t	tileColor;
+/**
+ * renderMap - render the map
+ *
+*/
 
-	for (int i = 0; i < MAP_NUM_ROWS; i++)
+void renderMap(void)
+{
+	int i, j, tileX, tileY;
+	color_t tileColor;
+
+	for (i = 0; i < MAP_NUM_ROWS; i++)
 	{
-		for (int j = 0; j < MAP_NUM_COLS; j++)
+		for (j = 0; j < MAP_NUM_COLS; j++)
 		{
 			tileX = j * TILE_SIZE;
 			tileY = i * TILE_SIZE;

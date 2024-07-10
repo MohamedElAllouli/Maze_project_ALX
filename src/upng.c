@@ -1,27 +1,27 @@
-/*
-uPNG -- derived from LodePNG version 20100808
-
-Copyright (c) 2005-2010 Lode Vandevenne
-Copyright (c) 2010 Sean Middleditch
-
-This software is provided 'as-is', without any express or implied
-warranty. In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-		1. The origin of this software must not be misrepresented; you must not
-		claim that you wrote the original software. If you use this software
-		in a product, an acknowledgment in the product documentation would be
-		appreciated but is not required.
-
-		2. Altered source versions must be plainly marked as such, and must not be
-		misrepresented as being the original software.
-
-		3. This notice may not be removed or altered from any source
-		distribution.
+/**
+* uPNG -- derived from LodePNG version 20100808
+*
+* Copyright (c) 2005-2010 Lode Vandevenne
+* Copyright (c) 2010 Sean Middleditch
+*
+* This software is provided 'as-is', without any express or implied
+* warranty. In no event will the authors be held liable for any damages
+* arising from the use of this software.
+*
+* Permission is granted to anyone to use this software for any purpose,
+* including commercial applications, and to alter it and redistribute it
+* freely, subject to the following restrictions:
+*
+*		1. The origin of this software must not be misrepresented; you must not
+*		claim that you wrote the original software. If you use this software
+*		in a product, an acknowledgment in the product documentation would be
+*		appreciated but is not required.
+*
+*		2. Altered source versions must be plainly marked as such, and must not be
+*		misrepresented as being the original software.
+*
+*		3. This notice may not be removed or altered from any source
+*		distribution.
 */
 
 #include <stdio.h>
@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 #include <string.h>
 #include <limits.h>
 
-#include "upng.h"
+#include "../headers/upng.h"
 
 #define MAKE_BYTE(b) ((b) & 0xFF)
 #define MAKE_DWORD(a,b,c,d) ((MAKE_BYTE(a) << 24) | (MAKE_BYTE(b) << 16) | (MAKE_BYTE(c) << 8) | MAKE_BYTE(d))
@@ -42,15 +42,15 @@ freely, subject to the following restrictions:
 #define FIRST_LENGTH_CODE_INDEX 257
 #define LAST_LENGTH_CODE_INDEX 285
 
-#define NUM_DEFLATE_CODE_SYMBOLS 288	/*256 literals, the end code, some length codes, and 2 unused codes */
-#define NUM_DISTANCE_SYMBOLS 32	/*the distance codes have their own symbols, 30 used, 2 unused */
-#define NUM_CODE_LENGTH_CODES 19	/*the code length codes. 0-15: code lengths, 16: copy previous 3-6 times, 17: 3-10 zeros, 18: 11-138 zeros */
-#define MAX_SYMBOLS 288 /* largest number of symbols used by any tree type */
+#define NUM_DEFLATE_CODE_SYMBOLS 288
+#define NUM_DISTANCE_SYMBOLS 32
+#define NUM_CODE_LENGTH_CODES 19
+#define MAX_SYMBOLS 288
 
 #define DEFLATE_CODE_BITLEN 15
 #define DISTANCE_BITLEN 15
 #define CODE_LENGTH_BITLEN 7
-#define MAX_BIT_LENGTH 15 /* largest bitlen used by any tree type */
+#define MAX_BIT_LENGTH 15
 
 #define DEFLATE_CODE_BUFFER_SIZE (NUM_DEFLATE_CODE_SYMBOLS * 2)
 #define DISTANCE_BUFFER_SIZE (NUM_DISTANCE_SYMBOLS * 2)
@@ -102,21 +102,21 @@ struct upng_t {
 
 typedef struct huffman_tree {
 	unsigned* tree2d;
-	unsigned maxbitlen;	/*maximum number of bits a single code can get */
-	unsigned numcodes;	/*number of symbols in the alphabet = number of codes */
+	unsigned maxbitlen;
+	unsigned numcodes;
 } huffman_tree;
 
-static const unsigned LENGTH_BASE[29] = {	/*the base lengths represented by codes 257-285 */
+static const unsigned LENGTH_BASE[29] = {
 	3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59,
 	67, 83, 99, 115, 131, 163, 195, 227, 258
 };
 
-static const unsigned LENGTH_EXTRA[29] = {	/*the extra bits used by codes 257-285 (added to base length) */
+static const unsigned LENGTH_EXTRA[29] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5,
 	5, 5, 5, 0
 };
 
-static const unsigned DISTANCE_BASE[30] = {	/*the base backwards distances (the bits of distance codes appear after length codes and use their own huffman tree) */
+static const unsigned DISTANCE_BASE[30] = {
 	1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513,
 	769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577
 };
@@ -600,28 +600,24 @@ static void inflate_uncompressed(upng_t* upng, unsigned char* out, unsigned long
 	(*bp) = p * 8;
 }
 
-/*inflate the deflated data (cfr. deflate spec); return value is the error*/
 static upng_error uz_inflate_data(upng_t* upng, unsigned char* out, unsigned long outsize, const unsigned char *in, unsigned long insize, unsigned long inpos)
 {
-	unsigned long bp = 0;	/*bit pointer in the "in" data, current byte is bp >> 3, current bit is bp & 0x7 (from lsb to msb of the byte) */
-	unsigned long pos = 0;	/*byte position in the out buffer */
+	unsigned long bp = 0;
+	unsigned long pos = 0;
 
 	unsigned done = 0;
 
 	while (done == 0) {
 		unsigned btype;
 
-		/* ensure next bit doesn't point past the end of the buffer */
 		if ((bp >> 3) >= insize) {
 			SET_ERROR(upng, UPNG_EMALFORMED);
 			return upng->error;
 		}
 
-		/* read block control bits */
 		done = read_bit(&bp, &in[inpos]);
 		btype = read_bit(&bp, &in[inpos]) | (read_bit(&bp, &in[inpos]) << 1);
 
-		/* process control type appropriateyly */
 		if (btype == 3) {
 			SET_ERROR(upng, UPNG_EMALFORMED);
 			return upng->error;
@@ -648,31 +644,25 @@ static upng_error uz_inflate(upng_t* upng, unsigned char *out, unsigned long out
 		return upng->error;
 	}
 
-	/* 256 * in[0] + in[1] must be a multiple of 31, the FCHECK value is supposed to be made that way */
 	if ((in[0] * 256 + in[1]) % 31 != 0) {
 		SET_ERROR(upng, UPNG_EMALFORMED);
 		return upng->error;
 	}
 
-	/*error: only compression method 8: inflate with sliding window of 32k is supported by the PNG spec */
 	if ((in[0] & 15) != 8 || ((in[0] >> 4) & 15) > 7) {
 		SET_ERROR(upng, UPNG_EMALFORMED);
 		return upng->error;
 	}
 
-	/* the specification of PNG says about the zlib stream: "The additional flags shall not specify a preset dictionary." */
 	if (((in[1] >> 5) & 1) != 0) {
 		SET_ERROR(upng, UPNG_EMALFORMED);
 		return upng->error;
 	}
-
-	/* create output buffer */
 	uz_inflate_data(upng, out, outsize, in, insize, 2);
 
 	return upng->error;
 }
 
-/*Paeth predicter, used by PNG filter type 4*/
 static int paeth_predictor(int a, int b, int c)
 {
 	int p = a + b - c;
@@ -690,14 +680,6 @@ static int paeth_predictor(int a, int b, int c)
 
 static void unfilter_scanline(upng_t* upng, unsigned char *recon, const unsigned char *scanline, const unsigned char *precon, unsigned long bytewidth, unsigned char filterType, unsigned long length)
 {
-	/*
-	   For PNG filter method 0
-	   unfilter a PNG image scanline by scanline. when the pixels are smaller than 1 byte, the filter works byte per byte (bytewidth = 1)
-	   precon is the previous unfiltered scanline, recon the result, scanline the current one
-	   the incoming scanlines do NOT include the filtertype byte, that one is given in the parameter filterType instead
-	   recon and scanline MAY be the same memory address! precon must be disjoint.
-	 */
-
 	unsigned long i;
 	switch (filterType) {
 	case 0:
@@ -752,23 +734,15 @@ static void unfilter_scanline(upng_t* upng, unsigned char *recon, const unsigned
 
 static void unfilter(upng_t* upng, unsigned char *out, const unsigned char *in, unsigned w, unsigned h, unsigned bpp)
 {
-	/*
-	   For PNG filter method 0
-	   this function unfilters a single image (e.g. without interlacing this is called once, with Adam7 it's called 7 times)
-	   out must have enough bytes allocated already, in must have the scanlines + 1 filtertype byte per scanline
-	   w and h are image dimensions or dimensions of reduced image, bpp is bpp per pixel
-	   in and out are allowed to be the same memory address!
-	 */
-
 	unsigned y;
 	unsigned char *prevline = 0;
 
-	unsigned long bytewidth = (bpp + 7) / 8;	/*bytewidth is used for filtering, is 1 when bpp < 8, number of bytes per pixel otherwise */
+	unsigned long bytewidth = (bpp + 7) / 8;
 	unsigned long linebytes = (w * bpp + 7) / 8;
 
 	for (y = 0; y < h; y++) {
 		unsigned long outindex = linebytes * y;
-		unsigned long inindex = (1 + linebytes) * y;	/*the extra filterbyte added to each row */
+		unsigned long inindex = (1 + linebytes) * y;
 		unsigned char filterType = in[inindex];
 
 		unfilter_scanline(upng, &out[outindex], &in[inindex + 1], prevline, bytewidth, filterType, linebytes);
@@ -782,12 +756,6 @@ static void unfilter(upng_t* upng, unsigned char *out, const unsigned char *in, 
 
 static void remove_padding_bits(unsigned char *out, const unsigned char *in, unsigned long olinebits, unsigned long ilinebits, unsigned h)
 {
-	/*
-	   After filtering there are still padding bpp if scanlines have non multiple of 8 bit amounts. They need to be removed (except at last scanline of (Adam7-reduced) image) before working with pure image buffers for the Adam7 code, the color convert code and the output to the user.
-	   in and out are allowed to be the same buffer, in may also be higher but still overlapping; in must have >= ilinebits*h bpp, out must have >= olinebits*h bpp, olinebits must be <= ilinebits
-	   also used to move bpp after earlier such operations happened, e.g. in a sequence of reduced images from Adam7
-	   only useful if (ilinebits - olinebits) is a value in the range 1..7
-	 */
 	unsigned y;
 	unsigned long diff = ilinebits - olinebits;
 	unsigned long obp = 0, ibp = 0;	/*bit pointers */
@@ -826,7 +794,7 @@ static void post_process_scanlines(upng_t* upng, unsigned char *out, unsigned ch
 		}
 		remove_padding_bits(out, in, w * bpp, ((w * bpp + 7) / 8) * 8, h);
 	} else {
-		unfilter(upng, out, in, w, h, bpp);	/*we can immediatly filter into the out buffer, no other steps needed */
+		unfilter(upng, out, in, w, h, bpp);
 	}
 }
 
@@ -892,28 +860,22 @@ static void upng_free_source(upng_t* upng)
 	upng->source.owning = 0;
 }
 
-/*read the information from the header and store it in the upng_Info. return value is error*/
+
 upng_error upng_header(upng_t* upng)
 {
-	/* if we have an error state, bail now */
 	if (upng->error != UPNG_EOK) {
 		return upng->error;
 	}
 
-	/* if the state is not NEW (meaning we are ready to parse the header), stop now */
 	if (upng->state != UPNG_NEW) {
 		return upng->error;
 	}
 
-	/* minimum length of a valid PNG file is 29 bytes
-	 * FIXME: verify this against the specification, or
-	 * better against the actual code below */
 	if (upng->source.size < 29) {
 		SET_ERROR(upng, UPNG_ENOTPNG);
 		return upng->error;
 	}
 
-	/* check that PNG header matches expected value */
 	if (upng->source.buffer[0] != 137 || upng->source.buffer[1] != 80 || upng->source.buffer[2] != 78 || upng->source.buffer[3] != 71 || upng->source.buffer[4] != 13 || upng->source.buffer[5] != 10 || upng->source.buffer[6] != 26 || upng->source.buffer[7] != 10) {
 		SET_ERROR(upng, UPNG_ENOTPNG);
 		return upng->error;
@@ -938,7 +900,6 @@ upng_error upng_header(upng_t* upng)
 		return upng->error;
 	}
 
-	/* check that the compression method (byte 27) is 0 (only allowed value in spec) */
 	if (upng->source.buffer[26] != 0) {
 		SET_ERROR(upng, UPNG_EMALFORMED);
 		return upng->error;
@@ -963,12 +924,15 @@ upng_error upng_header(upng_t* upng)
 /*read a PNG, the result will be in the same color type as the PNG (hence "generic")*/
 upng_error upng_decode(upng_t* upng)
 {
-	const unsigned char *chunk;
+	const unsigned char *chunk, *data;
 	unsigned char* compressed;
 	unsigned char* inflated;
 	unsigned long compressed_size = 0, compressed_index = 0;
 	unsigned long inflated_size;
+	unsigned long length;
 	upng_error error;
+
+	(void)*data;
 
 	/* if we have an error state, bail now */
 	if (upng->error != UPNG_EOK) {
@@ -999,8 +963,6 @@ upng_error upng_decode(upng_t* upng)
 	/* scan through the chunks, finding the size of all IDAT chunks, and also
 	 * verify general well-formed-ness */
 	while (chunk < upng->source.buffer + upng->source.size) {
-		unsigned long length;
-		const unsigned char *data;	/*the data in the chunk */
 
 		/* make sure chunk header is not larger than the total compressed */
 		if ((unsigned long)(chunk - upng->source.buffer + 12) > upng->source.size) {
@@ -1064,8 +1026,6 @@ upng_error upng_decode(upng_t* upng)
 
 		chunk += upng_chunk_length(chunk) + 12;
 	}
-
-	/* allocate space to store inflated (but still filtered) data */
 	inflated_size = ((upng->width * (upng->height * upng_get_bpp(upng) + 7)) / 8) + upng->height;
 	inflated = (unsigned char*)malloc(inflated_size);
 	if (inflated == NULL) {
@@ -1074,18 +1034,13 @@ upng_error upng_decode(upng_t* upng)
 		return upng->error;
 	}
 
-	/* decompress image data */
 	error = uz_inflate(upng, inflated, inflated_size, compressed, compressed_size);
 	if (error != UPNG_EOK) {
 		free(compressed);
 		free(inflated);
 		return upng->error;
 	}
-
-	/* free the compressed compressed data */
 	free(compressed);
-
-	/* allocate final image buffer */
 	upng->size = (upng->height * upng->width * upng_get_bpp(upng) + 7) / 8;
 	upng->buffer = (unsigned char*)malloc(upng->size);
 	if (upng->buffer == NULL) {
@@ -1094,8 +1049,6 @@ upng_error upng_decode(upng_t* upng)
 		SET_ERROR(upng, UPNG_ENOMEM);
 		return upng->error;
 	}
-
-	/* unfilter scanlines */
 	post_process_scanlines(upng, upng->buffer, inflated, upng);
 	free(inflated);
 
@@ -1107,7 +1060,6 @@ upng_error upng_decode(upng_t* upng)
 		upng->state = UPNG_DECODED;
 	}
 
-	/* we are done with our input buffer; free it if we own it */
 	upng_free_source(upng);
 
 	return upng->error;
@@ -1174,13 +1126,10 @@ upng_t* upng_new_from_file(const char *filename)
 		SET_ERROR(upng, UPNG_ENOTFOUND);
 		return upng;
 	}
-
-	/* get filesize */
 	fseek(file, 0, SEEK_END);
 	size = ftell(file);
 	rewind(file);
 
-	/* read contents of the file into the vector */
 	buffer = (unsigned char *)malloc((unsigned long)size);
 	if (buffer == NULL) {
 		fclose(file);
@@ -1189,8 +1138,6 @@ upng_t* upng_new_from_file(const char *filename)
 	}
 	fread(buffer, 1, (unsigned long)size, file);
 	fclose(file);
-
-	/* set the read buffer as our source buffer, with owning flag set */
 	upng->source.buffer = buffer;
 	upng->source.size = size;
 	upng->source.owning = 1;
@@ -1200,15 +1147,11 @@ upng_t* upng_new_from_file(const char *filename)
 
 void upng_free(upng_t* upng)
 {
-	/* deallocate image buffer */
 	if (upng->buffer != NULL) {
 		free(upng->buffer);
 	}
-
-	/* deallocate source buffer, if necessary */
 	upng_free_source(upng);
 
-	/* deallocate struct itself */
 	free(upng);
 }
 

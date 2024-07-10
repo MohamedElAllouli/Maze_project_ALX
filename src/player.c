@@ -1,44 +1,36 @@
-#include "player.h"
-#include "utils.h"
+#include "../headers/header.h"
 
-player_t	player =
+
+/**
+ * movePlayer - set the next position of the player
+ * @DeltaTime: time elapsed since the last frame
+*/
+
+void movePlayer(float DeltaTime)
 {
-	.x = WINDOW_WIDTH / 2,
-	.y = WINDOW_HEIGHT / 2,
-	.width = 1,
-	.height = 1,
-	.turnDirection = 0,
-	.walkDirection = 0,
-	.rotationAngle = PI / 2,
-	.walkSpeed = 100,
-	.turnSpeed = 45 * (PI / 180)
-};
+	float moveStep, newPlayerX, newPlayerY;
 
-void	movePlayer(float deltaTime)
-{
-	float	moveStep;
-	float	newPlayerX;
-	float	newPlayerY;
-
-	player.rotationAngle += player.turnDirection * player.turnSpeed * deltaTime;
-	normalizeAngle(&player.rotationAngle);
-
-	moveStep = player.walkDirection * player.walkSpeed * deltaTime;
+	player.rotationAngle += player.turnDirection * player.turnSpeed * DeltaTime;
+	moveStep = player.walkDirection * player.walkSpeed * DeltaTime;
 
 	newPlayerX = player.x + cos(player.rotationAngle) * moveStep;
 	newPlayerY = player.y + sin(player.rotationAngle) * moveStep;
 
-	if (!mapHasWallAt(newPlayerX, newPlayerY))
+	if (!DetectCollision(newPlayerX, newPlayerY))
 	{
 		player.x = newPlayerX;
 		player.y = newPlayerY;
 	}
 }
 
-void	renderMapPlayer(void)
+/**
+ * renderPlayer - render the player
+ *
+*/
+
+void renderPlayer(void)
 {
-	drawRect
-	(
+	drawRect(
 		player.x * MINIMAP_SCALE_FACTOR,
 		player.y * MINIMAP_SCALE_FACTOR,
 		player.width * MINIMAP_SCALE_FACTOR,
