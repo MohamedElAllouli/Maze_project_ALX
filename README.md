@@ -13,7 +13,7 @@ Simple DirectMedia Layer is a cross-platform development library designed to pro
 $ git clone https://github.com/MohamedElAllouli/Maze_project_ALX
 ```
 ## Usage 
-* Execute ./maze or type make run 
+* Execute ./mazeproject or type make run 
 * Use up and down arrow keys to move forward and backward (keys w and s serve the same function)
 * Use right and left arrow keys to turn the camera arround (keys d and a serve the same function)
 
@@ -23,7 +23,7 @@ $ gcc -Wall -Werror -Wextra -pedantic ./src/*.c -lm -o mazeproject `sdl2-config 
 ```
 
 ## Flowchart
-![The Maze Flow Chart](https://drive.google.com/file/d/17-qd6C_IquDv3sUK1RXu14SlesOI18id/view?usp=sharing)
+![The Maze Flow Chart](https://ibb.co/TqJHH53)
 
 ## Demo
 [![The Maze Demo](https://app.gemoo.com/share/image-annotation/669821688078536704?codeId=vzaAdG8WKaRV1&origin=imageurlgenerator)](https://youtu.be/WYW4frh7Res)
