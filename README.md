@@ -23,11 +23,11 @@ $ gcc -Wall -Werror -Wextra -pedantic ./src/*.c -lm -o mazeproject `sdl2-config 
 ```
 
 ## Flowchart
-![The Maze Flow Chart](https://app.gemoo.com/share/image-annotation/669821688078536704?codeId=vzaAdG8WKaRV1&origin=imageurlgenerator)
+![The Maze Flow Chart](https://drive.google.com/file/d/17-qd6C_IquDv3sUK1RXu14SlesOI18id/view?usp=sharing)
 
 ## Demo
-[![The Maze Demo](https://app.gemoo.com/share/image-annotation/669821688078536704?codeId=vzaAdG8WKaRV1&origin=imageurlgenerator)](https://www.youtube.com/embed/6T2N8gNUTQ8)
+[![The Maze Demo](https://app.gemoo.com/share/image-annotation/669821688078536704?codeId=vzaAdG8WKaRV1&origin=imageurlgenerator)](https://youtu.be/WYW4frh7Res)
 
 ## Author :black_nib:
 
-- **Leo Azubuike** <[Zubby](https://github.com/Azubuikeleo13)>
+- **EL ALLOULI Mohmae** <[EL ALLOULI](https://github.com/MohamedElAllouli)>
